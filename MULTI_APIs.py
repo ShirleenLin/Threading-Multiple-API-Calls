@@ -9,7 +9,7 @@ def downLoadData(pro):
     start_date = "2019-04-19"
     end_date="2023-06-15"
 
-    conn = sqlite3.connect("/Volumes/movable/Financial0615.sqlite")
+    conn = sqlite3.connect("/home/ec2-user/Financial0615.sqlite")
     cursor = conn.cursor()
 
     #Financial Table
@@ -41,7 +41,6 @@ def downLoadData(pro):
                 executor.submit(balancesheet, i )    ]
         # Wait for all the results
             results = [task.result() for task in concurrent.futures.as_completed(tasks)]
-
         #Merge dataframes from different APIs
         df_new = pd.merge(pd.merge(pd.merge(results[0],results[1],on=['ts_code','ann_date']),results[2],on=['ts_code','ann_date']),results[3],on=['ts_code','ann_date'])
         df_new.to_sql(name='Financial in loop', con=conn,if_exists="append",index=False) #This is the insurance
@@ -55,9 +54,6 @@ def downLoadData(pro):
     conn.close()
 
 #You need to get your own Tushare token from https://tushare.pro/document/1?doc_id=39
-ts.set_token('')
+ts.set_token('39e09b051fedaaf1f98702dadd558af09f17064430210b573fb40d8c')
 pro = ts.pro_api()
 downLoadData(pro)
-
-
-
