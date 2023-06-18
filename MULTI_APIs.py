@@ -54,6 +54,6 @@ def downLoadData(pro):
     conn.close()
 
 #You need to get your own Tushare token from https://tushare.pro/document/1?doc_id=39
-ts.set_token('39e09b051fedaaf1f98702dadd558af09f17064430210b573fb40d8c')
+ts.set_token('')
 pro = ts.pro_api()
 downLoadData(pro)
