@@ -61,4 +61,3 @@ downLoadData(pro)
 
 
 
-#keep the number of threads lower than the number of available CPU cores
