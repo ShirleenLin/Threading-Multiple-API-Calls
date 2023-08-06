@@ -39,21 +39,18 @@ def downLoadData(pro):
                 executor.submit(cashflow, i),
                 executor.submit(fina_indicator, i),
                 executor.submit(balancesheet, i )    ]
-        # Wait for all the results
             results = [task.result() for task in concurrent.futures.as_completed(tasks)]
-        #Merge dataframes from different APIs
-        df_new = pd.merge(pd.merge(pd.merge(results[0],results[1],on=['ts_code','ann_date']),results[2],on=['ts_code','ann_date']),results[3],on=['ts_code','ann_date'])
-        df_new.to_sql(name='Financial in loop', con=conn,if_exists="append",index=False) #This is the insurance
-    sql = "SELECT * FROM [Financial in loop]"
-    df_new = pd.read_sql(sql,conn)
-    df_new.drop_duplicates(inplace=True)
-    df_new.to_sql(name='Financial', con=conn,if_exists="replace",index=False)
-    #codelist.to_sql(name='Share_index', con=conn,index=False) #--> Use this line if you want a Share_index Table
+        merged_df = pd.DataFrame()
+        for df in results[0:]:
+            df.drop_duplicates(subset=['ts_code', 'ann_date'], keep='last', inplace=True) # Data quality issue if rows have the same "primary key" but are not unique
+            df.dropna(subset=['ts_code', 'ann_date'], inplace=True) #Because this is the primary key
+            merged_df = merged_df.merge(df, on=['ann_date'], how='outer') #Primary key is ['ts_code', 'ann_date'], but all dfs contain the same ts_code in the loop
+            print("Check duplicates", merged_df.duplicated(subset=['ts_code', 'ann_date']))
+        merged_df.to_sql(name='Financial in loop', con=conn,if_exists="append",index=False)
     print("Successfully saved financial data into SQL..")
     conn.commit()
     conn.close()
 
-#You need to get your own Tushare token from https://tushare.pro/document/1?doc_id=39
-ts.set_token('')
+ts.set_token('') #You need to get your own Tushare token from https://tushare.pro/document/1?doc_id=39
 pro = ts.pro_api()
 downLoadData(pro)
