@@ -16,20 +16,16 @@ def downLoadData(pro):
     codelist = pro.stock_basic()
 
     def income(i):
-        income = pro.income(ts_code=codelist["ts_code"][i], start_date=start_date, end_date=end_date, fields='ts_code,ann_date,basic_eps,revenue')
-        return income
+        return pro.income(ts_code=codelist["ts_code"][i], start_date=start_date, end_date=end_date, fields='ts_code,ann_date,basic_eps,revenue')
 
     def cashflow(i):
-        cashflow = pro.cashflow(ts_code=codelist["ts_code"][i], start_date=start_date, end_date=end_date, fields='ts_code,ann_date,net_profit,  free_cashflow')
-        return cashflow
+        return pro.cashflow(ts_code=codelist["ts_code"][i], start_date=start_date, end_date=end_date, fields='ts_code,ann_date,net_profit,  free_cashflow')
 
     def fina_indicator(i):
-        fina_indicator = pro.fina_indicator(ts_code=codelist["ts_code"][i], start_date=start_date, end_date=end_date, fields='ts_code,ann_date,debt_to_eqt, roe, revenue_ps, capital_rese_ps, gross_margin, current_ratio,  fcff,  working_capital, networking_capital, retained_earnings, bps,  retainedps, cfps, ebit_ps, fcff_ps, netprofit_margin')
-        return fina_indicator
+        return pro.fina_indicator(ts_code=codelist["ts_code"][i], start_date=start_date, end_date=end_date, fields='ts_code,ann_date,debt_to_eqt, roe, revenue_ps, capital_rese_ps, gross_margin, current_ratio,  fcff,  working_capital, networking_capital, retained_earnings, bps,  retainedps, cfps, ebit_ps, fcff_ps, netprofit_margin')
 
     def balancesheet(i):
-        balancesheet = pro.balancesheet(ts_code=codelist["ts_code"][i], start_date=start_date, end_date=end_date, fields='ts_code,ann_date,cap_rese')
-        return balancesheet
+        return pro.balancesheet(ts_code=codelist["ts_code"][i], start_date=start_date, end_date=end_date, fields='ts_code,ann_date,cap_rese')
 
     for i in tqdm(range(len(codelist["ts_code"]))):
         print(i,codelist["ts_code"][i])
@@ -39,9 +35,10 @@ def downLoadData(pro):
                 executor.submit(fina_indicator, i),
                 executor.submit(balancesheet, i ) ]
             results = [task.result() for task in concurrent.futures.as_completed(tasks)]
-        processed_results = list(map(lambda df: df.drop_duplicates(subset=['ts_code', 'ann_date'], keep='last').dropna(subset=['ts_code', 'ann_date']), results))
-        combined_df = pd.concat(processed_results, on=['ann_date'])  #All dfs contain the same ts_code in the a loop
+        processed_results = list(map(lambda df: df.drop_duplicates(subset=['ts_code', 'ann_date'], keep='last').dropna(subset=['ts_code', 'ann_date']), results)) #If rows with the same primary key are not unique, it indicates a data quality issue
+        combined_df = pd.concat(processed_results, keys=['ann_date'])  #All dfs contain the same ts_code in the a loop
         combined_df.to_sql(name='Financial in loop', con=conn,if_exists="append",index=False)
+        print(combined_df)
     print("Successfully saved financial data into SQL..")
     conn.commit()
     conn.close()
