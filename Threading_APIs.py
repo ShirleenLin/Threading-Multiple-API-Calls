@@ -35,10 +35,11 @@ def downLoadData(pro):
                 executor.submit(fina_indicator, i),
                 executor.submit(balancesheet, i ) ]
             results = [task.result() for task in concurrent.futures.as_completed(tasks)]
-        processed_results = list(map(lambda df: df.drop_duplicates(subset=['ts_code', 'ann_date'], keep='last').dropna(subset=['ts_code', 'ann_date']), results)) #If rows with the same primary key are not unique, it indicates a data quality issue
-        combined_df = pd.concat(processed_results, keys=['ann_date'])  #All dfs contain the same ts_code in the a loop
-        combined_df.to_sql(name='Financial in loop', con=conn,if_exists="append",index=False)
-        print(combined_df)
+        list(map(lambda df: print("Processing DataFrame:", df.shape), results))
+        results = list(map(lambda df: df.drop_duplicates(subset=['ts_code', 'ann_date'], keep='last').dropna(subset=['ts_code', 'ann_date']), results)) #If rows with the same primary key are not unique, it indicates a data quality issue
+        merged_df=pd.concat(list(map(lambda df:df.set_index(['ts_code','ann_date']),results)),axis=1,join='outer').reset_index()
+        #REDUCE OPTION: merged_df = reduce(lambda x, y: x.merge(y, on=['ts_code','ann_date']), results)
+        merged_df.to_sql(name='Financial in loop', con=conn,if_exists="append",index=False)
     print("Successfully saved financial data into SQL..")
     conn.commit()
     conn.close()
